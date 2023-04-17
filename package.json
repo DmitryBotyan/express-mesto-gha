@@ -19,12 +19,14 @@
   },
   "homepage": "https://github.com/DmitryBotyan/express-mesto-gha#readme",
   "dependencies": {
-    "body-parser": "^1.20.2",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.27.5",
     "express": "^4.18.2",
-    "mongod": "^2.0.0",
     "mongoose": "^7.0.3",
-    "nodemon": "^2.0.22"
+    "body-parser": "^1.20.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.38.0",
+    "nodemon": "^2.0.22",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.27.5"
   }
 }

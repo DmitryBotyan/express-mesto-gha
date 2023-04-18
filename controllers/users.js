@@ -71,7 +71,7 @@ module.exports.updateUser = (req, res) => {
     .catch((err) => {
       if (err.statusCode === 404) {
         res.status(404).send({ message: err.message });
-      } else if (err.name === 'ValidationError') {
+      } else if (err.name === 'ValidationError' || err.name === 'CastError') {
         res.status(400).send({
           message: 'Переданы некорректные данные',
         });
@@ -96,7 +96,7 @@ module.exports.updateAvatar = (req, res) => {
     .catch((err) => {
       if (err.statusCode === 404) {
         res.status(404).send({ message: err.message });
-      } else if (err.name === 'ValidationError') {
+      } else if (err.name === 'ValidationError' || err.name === 'CastError') {
         res.status(400).send({
           message: 'Переданы некорректные данные',
         });

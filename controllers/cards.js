@@ -50,6 +50,10 @@ module.exports.deleteCard = (req, res) => {
     }).catch((err) => {
       if (err.statusCode === 404) {
         res.status(404).send({ message: err.message });
+      } else if (err.name === 'CastError') {
+        res.status(400).send({
+          message: 'Переданы некорректные данные',
+        });
       } else {
         res.status(500).send({
           message: 'Что-то пошло не так...',

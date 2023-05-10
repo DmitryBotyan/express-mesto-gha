@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const validator = require('../node_modules/validator');
 
 const cardShema = new mongoose.Schema({
   name: {
@@ -10,22 +11,30 @@ const cardShema = new mongoose.Schema({
   link: {
     type: String,
     required: [true, 'Поле "link" должно быть заполнено'],
+    validate: {
+      validator(v) {
+        return validator.isURL(v);
+      },
+      message: 'Введите ссылку',
+    },
   },
-  owner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'user',
-    required: [true, 'Поле "owner" должно быть заполнено'],
-  },
+  owner:
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+      required: [true, 'Поле "owner" должно быть заполнено'],
+    },
   likes: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'user',
+      default: [],
     },
     [],
   ],
   createdAt: {
     type: Date,
-    default: Date.now(),
+    default: Date.now,
   },
 });
 

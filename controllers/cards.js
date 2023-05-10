@@ -1,10 +1,10 @@
 const Card = require('../models/card');
+const { ValidationError, CastError, DocumentNotFoundError } = require('../middlewares/error');
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const {
-    name, link,
+    name, link, id,
   } = req.body;
-  const { id } = req.user;
 
   Card.create({
     name, link, owner: id,
@@ -13,56 +13,43 @@ module.exports.createCard = (req, res) => {
       res.status(201).send(newCard);
     })
     .catch((err) => {
-      if (err.name === 'CastError' || err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные',
-        });
+      if (err instanceof ValidationError) {
+        next(new ValidationError('Переданы некорректные данные'));
       } else {
-        res.status(500).send({
-          message: 'Что-то пошло не так...',
-        });
+        next(err);
       }
     });
 };
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
+    .populate(['name', 'about', 'avatar', 'email'])
     .then((cards) => {
       res.send(cards);
     })
-    .catch(() => {
-      res.status(500).send({
-        message: 'Что-то пошло не так...',
-      });
+    .catch((err) => {
+      next(err);
     });
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   Card.findByIdAndRemove(cardId)
     .orFail(() => {
-      const error = new Error('Карточка по заданному id отсутствует в базе');
-      error.statusCode = 404;
-      throw error;
+      throw new DocumentNotFoundError('Объект не найден');
     })
     .then((card) => {
       res.send(card);
     }).catch((err) => {
-      if (err.statusCode === 404) {
-        res.status(404).send({ message: err.message });
-      } else if (err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные',
-        });
+      if (err instanceof CastError) {
+        next(new CastError('Невалидный идентификатор'));
       } else {
-        res.status(500).send({
-          message: 'Что-то пошло не так...',
-        });
+        next(err);
       }
     });
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   const { cardId } = req.params;
 
   Card.findByIdAndUpdate(
@@ -74,29 +61,21 @@ module.exports.likeCard = (req, res) => {
   )
     .populate('owner')
     .orFail(() => {
-      const error = new Error('Карточка по заданному id отсутствует в базе');
-      error.statusCode = 404;
-      throw error;
+      throw new DocumentNotFoundError('Объект не найден');
     })
     .then((like) => {
       res.send(like);
     })
     .catch((err) => {
-      if (err.statusCode === 404) {
-        res.status(404).send({ message: err.message });
-      } else if (err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Невалидный идентификатор',
-        });
+      if (err instanceof CastError) {
+        next(new CastError('Невалидный идентификатор'));
       } else {
-        res.status(500).send({
-          message: 'Что-то пошло не так...',
-        });
+        next(err);
       }
     });
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   const { cardId } = req.params;
 
   Card.findByIdAndUpdate(
@@ -108,24 +87,16 @@ module.exports.dislikeCard = (req, res) => {
   )
     .populate('owner')
     .orFail(() => {
-      const error = new Error('Карточка по заданному id отсутствует в базе');
-      error.statusCode = 404;
-      throw error;
+      throw new DocumentNotFoundError('Объект не найден');
     })
     .then((disLike) => {
       res.send(disLike);
     })
     .catch((err) => {
-      if (err.statusCode === 404) {
-        res.status(404).send({ message: err.message });
-      } else if (err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Невалидный идентификатор',
-        });
+      if (err instanceof CastError) {
+        next(new CastError('Невалидный идентификатор'));
       } else {
-        res.status(500).send({
-          message: 'Что-то пошло не так...',
-        });
+        next(err);
       }
     });
 };

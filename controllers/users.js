@@ -1,34 +1,32 @@
 const User = require('../models/user');
 const bcrypt = require('../node_modules/bcryptjs');
 const jwt = require('../node_modules/jsonwebtoken');
-const validator = require('../node_modules/validator');
+const {
+  ValidationError, CastError, DocumentNotFoundError, AuthError,
+} = require('../middlewares/error');
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   bcrypt.hash(req.body.password, 10).then((hash) => {
-    if (validator.isEmail(req.body.email)) {
-      User.create({
-        email: req.body.email,
-        password: hash,
-      }).then((newUser) => {
-        res.send(newUser);
-      });
-    } else {
-      res.send('Введите Email');
-    }
+    const { name, about, avatar } = req.body;
+    User.create({
+      name,
+      about,
+      avatar,
+      email: req.body.email,
+      password: hash,
+    }).then((newUser) => {
+      res.status(200).send(newUser);
+    });
   })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные',
-        });
+      if (err instanceof ValidationError) {
+        next(new ValidationError('Переданы некорректные данные'));
       } else if (err.code === 11000) {
         res.status(409).send({
           message: 'Такой пользователь уже существует',
         });
       } else {
-        res.status(500).send({
-          message: 'Что-то пошло не так...',
-        });
+        next(err);
       }
     });
 };
@@ -38,104 +36,71 @@ module.exports.login = (req, res) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: 604800 });
+      const token = jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: 604800 });
+      res.cookie('_id', user._id);
       res.send({ token });
     })
-    .catch((err) => {
-      res
-        .status(401)
-        .send({ message: err.message });
+    .catch(() => {
+      throw new AuthError('Необходима авторизация');
     });
 };
 
-module.exports.getUser = (req, res) => {
-  User.findById(req.user.id)
+module.exports.getUser = (req, res, next) => {
+  User.findById(req.cookies)
     .orFail(() => {
-      const error = new Error('Пользователь по заданному id отсутствует в базе');
-      error.statusCode = 404;
-      throw error;
+      throw new DocumentNotFoundError('Объект не найден');
     })
     .then((user) => {
       res.send(user);
     }).catch((err) => {
-      if (err.statusCode === 404) {
-        res.status(404).send({ message: err.message });
-      } else if (err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные',
-        });
+      if (err instanceof CastError) {
+        next(new CastError('Невалидный идентификатор'));
       } else {
-        res.status(500).send({
-          message: 'Что-то пошло не так...',
-        });
+        next(err);
       }
     });
 };
 
-module.exports.getAllUsers = (req, res) => {
+module.exports.getAllUsers = (req, res, next) => {
   User.find({})
     .then((users) => {
       res.send(users);
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные',
-        });
-      } else {
-        res.status(500).send({
-          message: 'Что-то пошло не так...',
-        });
-      }
+      next(err);
     });
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   User.findByIdAndUpdate(req.user.id, req.body, { new: true, runValidators: true })
     .orFail(() => {
-      const error = new Error('Пользователь по заданному id отсутствует в базе');
-      error.statusCode = 404;
-      throw error;
+      throw new DocumentNotFoundError('Объект не найден');
     })
     .then((updatedUser) => {
       res.send(updatedUser);
     })
     .catch((err) => {
-      if (err.statusCode === 404) {
-        res.status(404).send({ message: err.message });
-      } else if (err.name === 'ValidationError' || err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные',
-        });
+      if (err instanceof ValidationError) {
+        next(new ValidationError('Переданы некорректные данные'));
       } else {
-        res.status(500).send({
-          message: 'Что-то пошло не так...',
-        });
+        next(err);
       }
     });
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   User.findByIdAndUpdate(req.user.id, req.body, { new: true, runValidators: true })
     .orFail(() => {
-      const error = new Error('Пользователь по заданному id отсутствует в базе');
-      error.statusCode = 404;
-      throw error;
+      throw new DocumentNotFoundError('Объект не найден');
     })
     .then((updatedAvatar) => {
       res.send(updatedAvatar);
     })
     .catch((err) => {
-      if (err.statusCode === 404) {
-        res.status(404).send({ message: err.message });
-      } else if (err.name === 'ValidationError' || err.name === 'CastError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные',
-        });
+      if (err instanceof ValidationError) {
+        next(new ValidationError('Переданы некорректные данные'));
       } else {
-        res.status(500).send({
-          message: 'Что-то пошло не так...',
-        });
+        next(err);
       }
     });
 };

@@ -8,7 +8,7 @@ const {
 } = require('../validation/validation');
 
 usersRouter.get('/', auth, getAllUsers);
-usersRouter.get('/me', getUser);
+usersRouter.get('/me', auth, getUser);
 usersRouter.post('/signin', loginValidation, login);
 usersRouter.post('/signup', createUserValidation, createUser);
 usersRouter.patch('/me', auth, updateUserValidation, updateUser);

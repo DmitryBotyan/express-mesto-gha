@@ -72,7 +72,7 @@ module.exports.getAllUsers = (req, res, next) => {
 };
 
 module.exports.updateUser = (req, res, next) => {
-  User.findByIdAndUpdate(req.user.id, req.body, { new: true, runValidators: true })
+  User.findByIdAndUpdate(req.cookies, req.body, { new: true, runValidators: true })
     .orFail(() => {
       throw new DocumentNotFoundError('Объект не найден');
     })
@@ -89,7 +89,7 @@ module.exports.updateUser = (req, res, next) => {
 };
 
 module.exports.updateAvatar = (req, res, next) => {
-  User.findByIdAndUpdate(req.user.id, req.body, { new: true, runValidators: true })
+  User.findByIdAndUpdate(req.cookies, req.body, { new: true, runValidators: true })
     .orFail(() => {
       throw new DocumentNotFoundError('Объект не найден');
     })

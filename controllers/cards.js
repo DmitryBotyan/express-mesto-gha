@@ -3,11 +3,11 @@ const { ValidationError, CastError, DocumentNotFoundError } = require('../middle
 
 module.exports.createCard = (req, res, next) => {
   const {
-    name, link, id,
+    name, link,
   } = req.body;
 
   Card.create({
-    name, link, owner: id,
+    name, link, owner: req.cookies,
   })
     .then((newCard) => {
       res.status(201).send(newCard);
@@ -55,7 +55,7 @@ module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     cardId,
     {
-      $addToSet: { likes: req.user.id },
+      $addToSet: { likes: req.cookies },
     },
     { new: true },
   )
@@ -81,7 +81,7 @@ module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     cardId,
     {
-      $pull: { likes: req.user.id },
+      $pull: { likes: req.cookies },
     },
     { new: true },
   )

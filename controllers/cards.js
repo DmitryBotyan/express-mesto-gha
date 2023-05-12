@@ -7,10 +7,10 @@ module.exports.createCard = (req, res, next) => {
   } = req.body;
 
   Card.create({
-    name, link, owner: req.cookies,
+    name, link, owner: req.user._id,
   })
     .then((newCard) => {
-      res.status(201).send(newCard);
+      res.statusCode(201).send(newCard);
     })
     .catch((err) => {
       if (err instanceof ValidationError) {
@@ -23,7 +23,7 @@ module.exports.createCard = (req, res, next) => {
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
-    .populate(['name', 'about', 'avatar', 'email'])
+    .populate('owner')
     .then((cards) => {
       res.send(cards);
     })
@@ -36,10 +36,12 @@ module.exports.deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   Card.findByIdAndRemove(cardId)
     .orFail(() => {
-      throw new DocumentNotFoundError('Объект не найден');
+      next(new DocumentNotFoundError('Объект не найден'));
     })
     .then((card) => {
-      res.send(card);
+      if (card.owner.toJSON() === req.user._id) {
+        res.send(card);
+      }
     }).catch((err) => {
       if (err instanceof CastError) {
         next(new CastError('Невалидный идентификатор'));
@@ -55,13 +57,13 @@ module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     cardId,
     {
-      $addToSet: { likes: req.cookies },
+      $addToSet: { likes: req.user._id },
     },
     { new: true },
   )
     .populate('owner')
     .orFail(() => {
-      throw new DocumentNotFoundError('Объект не найден');
+      next(new DocumentNotFoundError('Объект не найден'));
     })
     .then((like) => {
       res.send(like);
@@ -81,13 +83,13 @@ module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     cardId,
     {
-      $pull: { likes: req.cookies },
+      $pull: { likes: req.user._id },
     },
     { new: true },
   )
     .populate('owner')
     .orFail(() => {
-      throw new DocumentNotFoundError('Объект не найден');
+      next(new DocumentNotFoundError('Объект не найден'));
     })
     .then((disLike) => {
       res.send(disLike);

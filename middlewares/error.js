@@ -27,7 +27,14 @@ class AuthError extends Error {
     this.statusCode = 401;
   }
 }
+class CreateUserError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'CreateUserError';
+    this.statusCode = 409;
+  }
+}
 
 module.exports = {
-  ValidationError, CastError, DocumentNotFoundError, AuthError,
+  ValidationError, CastError, DocumentNotFoundError, AuthError, CreateUserError,
 };

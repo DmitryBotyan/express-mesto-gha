@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const router = require('./routes');
 const { errors } = require('./node_modules/celebrate');
 const { DocumentNotFoundError } = require('./middlewares/error');
-const cookieparser = require('./node_modules/cookie-parser');
 
 const app = express();
 
@@ -13,8 +12,6 @@ mongoose
 
 app.use(express.json());
 
-app.use(cookieparser());
-
 app.use(bodyparser.urlencoded({ extended: true }));
 
 app.use(router);
@@ -22,13 +19,15 @@ app.use(router);
 app.use(errors());
 
 app.use((err, req, res, next) => {
-  next(new DocumentNotFoundError('Страница не найдена'));
+  if (err.status === 404) {
+    next(new DocumentNotFoundError('Страница не найдена'));
+  }
 });
 
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
   res.status(statusCode).send({
-    message: statusCode
+    message: statusCode === 500
       ? 'Что-то пошло не так...'
       : message,
   });

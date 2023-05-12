@@ -18,12 +18,11 @@ const cardShema = new mongoose.Schema({
       message: 'Введите ссылку',
     },
   },
-  owner:
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'user',
-      required: [true, 'Поле "owner" должно быть заполнено'],
-    },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'user',
+    required: [true, 'Поле "owner" должно быть заполнено'],
+  },
   likes: [
     {
       type: mongoose.Schema.Types.ObjectId,

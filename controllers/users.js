@@ -2,7 +2,7 @@ const User = require('../models/user');
 const bcrypt = require('../node_modules/bcryptjs');
 const jwt = require('../node_modules/jsonwebtoken');
 const {
-  ValidationError, CastError, DocumentNotFoundError, AuthError,
+  ValidationError, DocumentNotFoundError, CreateUserError, CastError,
 } = require('../middlewares/error');
 
 module.exports.createUser = (req, res, next) => {
@@ -22,33 +22,42 @@ module.exports.createUser = (req, res, next) => {
       if (err instanceof ValidationError) {
         next(new ValidationError('Переданы некорректные данные'));
       } else if (err.code === 11000) {
-        res.status(409).send({
-          message: 'Такой пользователь уже существует',
-        });
+        next(new CreateUserError('Такой пользователь уже существует'));
       } else {
         next(err);
       }
     });
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
-
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: 604800 });
-      res.cookie('_id', user._id);
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
       res.send({ token });
     })
-    .catch(() => {
-      throw new AuthError('Необходима авторизация');
+    .catch((err) => {
+      next(err);
+    });
+};
+
+module.exports.getCurrentUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .orFail(() => {
+      next(new DocumentNotFoundError('Объект не найден'));
+    })
+    .then((user) => {
+      res.send(user);
+    }).catch((err) => {
+      next(err);
     });
 };
 
 module.exports.getUser = (req, res, next) => {
-  User.findById(req.cookies)
+  const { id } = req.params;
+  User.findById(id)
     .orFail(() => {
-      throw new DocumentNotFoundError('Объект не найден');
+      next(new DocumentNotFoundError('Объект не найден'));
     })
     .then((user) => {
       res.send(user);
@@ -72,9 +81,9 @@ module.exports.getAllUsers = (req, res, next) => {
 };
 
 module.exports.updateUser = (req, res, next) => {
-  User.findByIdAndUpdate(req.cookies, req.body, { new: true, runValidators: true })
+  User.findByIdAndUpdate(req.user._id, req.body, { new: true, runValidators: true })
     .orFail(() => {
-      throw new DocumentNotFoundError('Объект не найден');
+      next(new DocumentNotFoundError('Объект не найден'));
     })
     .then((updatedUser) => {
       res.send(updatedUser);
@@ -89,9 +98,9 @@ module.exports.updateUser = (req, res, next) => {
 };
 
 module.exports.updateAvatar = (req, res, next) => {
-  User.findByIdAndUpdate(req.cookies, req.body, { new: true, runValidators: true })
+  User.findByIdAndUpdate(req.user._id, req.body, { new: true, runValidators: true })
     .orFail(() => {
-      throw new DocumentNotFoundError('Объект не найден');
+      next(new DocumentNotFoundError('Объект не найден'));
     })
     .then((updatedAvatar) => {
       res.send(updatedAvatar);

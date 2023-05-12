@@ -21,21 +21,21 @@ const loginValidation = celebrate({
 
 const updateUserValidation = celebrate({
   body: Joi.object({
-    name: Joi.string().min(2).max(30),
-    about: Joi.string().min(2).max(30),
+    name: Joi.string().required().min(2).max(30),
+    about: Joi.string().required().min(2).max(30),
   }),
 });
 
 const updateAvatarValidation = celebrate({
   body: Joi.object({
-    avatar: Joi.string().regex(urlRegex),
+    avatar: Joi.string().required().regex(urlRegex),
   }),
 });
 
 const createCardValidation = celebrate({
   body: Joi.object({
-    name: Joi.string().min(2).max(30),
-    link: Joi.string().regex(urlRegex),
+    name: Joi.string().required().min(2).max(30),
+    link: Joi.string().required().regex(urlRegex),
   }),
 });
 

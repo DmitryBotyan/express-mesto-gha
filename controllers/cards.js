@@ -33,29 +33,36 @@ module.exports.getCards = (req, res, next) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  const { cardId } = req.params;
-  Card.findByIdAndRemove(cardId)
-    .orFail(() => {
-      next(new DocumentNotFoundError('Объект не найден'));
-    })
+  const { id } = req.params;
+  Card.findById(id)
     .then((card) => {
       if (card.owner.toJSON() === req.user._id) {
-        res.send(card);
-      }
-    }).catch((err) => {
-      if (err instanceof CastError) {
-        next(new CastError('Невалидный идентификатор'));
+        Card.deleteOne(card)
+          .orFail(() => {
+            next(new DocumentNotFoundError('Объект не найден'));
+          })
+          .then((c) => {
+            res.send(c);
+          }).catch((err) => {
+            if (err instanceof CastError) {
+              next(new CastError('Невалидный идентификатор'));
+            } else {
+              next(err);
+            }
+          });
       } else {
-        next(err);
+        res.send({
+          message: 'Нельзя удалить чужую карточку',
+        });
       }
     });
 };
 
 module.exports.likeCard = (req, res, next) => {
-  const { cardId } = req.params;
+  const { id } = req.params;
 
   Card.findByIdAndUpdate(
-    cardId,
+    id,
     {
       $addToSet: { likes: req.user._id },
     },
@@ -78,10 +85,10 @@ module.exports.likeCard = (req, res, next) => {
 };
 
 module.exports.dislikeCard = (req, res, next) => {
-  const { cardId } = req.params;
+  const { id } = req.params;
 
   Card.findByIdAndUpdate(
-    cardId,
+    id,
     {
       $pull: { likes: req.user._id },
     },

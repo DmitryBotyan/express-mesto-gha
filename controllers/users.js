@@ -14,8 +14,13 @@ module.exports.createUser = (req, res, next) => {
       avatar,
       email: req.body.email,
       password: hash,
-    }).then((newUser) => {
-      res.status(200).send(newUser);
+    }).then((user) => {
+      res.status(200).send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+      });
     });
   })
     .catch((err) => {
